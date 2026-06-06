@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Trigger poll
         run: |
-          curl -s --max-time 300 https://fb-odoo.vercel.app/poll
+          curl -s --max-time 300 https://fb-odoo-ruddy.vercel.app/poll
