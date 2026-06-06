@@ -93,12 +93,9 @@ CORE_FIELDS = {"full_name", "first_name", "last_name", "email", "phone",
                "postal_code", "pin_code"}
 
 TAG_RULES = [
-    ("Furniture",       ["furniture", "sofa", "bed", "table", "chair", "wardrobe", "durian", "exchange furniture"]),
-    ("Electronics",     ["electronics", "tv", "television", "washing machine", "refrigerator", "fridge"]),
-    ("Air Conditioner", ["air conditioner", "ac", "_ton", "ton of air"]),
-    ("Kitchen",         ["kitchen", "chimney", "hob", "oven", "microwave"]),
-    ("Home",            ["modglow", "home", "interior", "decor"]),
-    ("Job / Hiring",    ["job", "employment", "resume", "hiring", "career"]),
+    ("Electronics",      ["electronics", "tv", "television", "washing machine", "refrigerator", "fridge", "air conditioner", "ac"]),
+    ("Furniture",        ["furniture", "sofa", "bed", "table", "chair", "wardrobe", "durian"]),
+    ("Modular Kitchen",  ["kitchen", "modular", "chimney", "hob", "oven", "microwave"]),
 ]
 
 
