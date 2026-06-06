@@ -49,9 +49,16 @@ def _get_lead_forms(page_id, page_token):
 
 
 def _get_leads_from_form(form_id, page_token):
+    import time
+    since = int(time.time()) - 90000  # last 25 hours
     leads = []
     url = f"https://graph.facebook.com/v19.0/{form_id}/leads"
-    params = {"access_token": page_token, "fields": "id,field_data,created_time", "limit": 100}
+    params = {
+        "access_token": page_token,
+        "fields": "id,field_data,created_time",
+        "limit": 100,
+        "filtering": f'[{{"field":"time_created","operator":"GREATER_THAN","value":{since}}}]',
+    }
     while True:
         r = httpx.get(url, params=params)
         r.raise_for_status()
@@ -60,7 +67,7 @@ def _get_leads_from_form(form_id, page_token):
         after = data.get("paging", {}).get("cursors", {}).get("after")
         if not after or not data.get("data"):
             break
-        params = {"access_token": page_token, "fields": "id,field_data,created_time", "limit": 100, "after": after}
+        params = {**params, "after": after}
     return leads
 
 
@@ -155,17 +162,24 @@ def _odoo_connect():
     return uid, models
 
 
-def _lead_exists(uid, models, leadgen_id):
-    results = models.execute_kw(
+def _fetch_existing_ids(uid, models):
+    leads = models.execute_kw(
         ODOO_DB, uid, ODOO_API_KEY,
-        "crm.lead", "search",
-        [[["description", "like", f"Facebook Lead ID: {leadgen_id}"]]]
+        "crm.lead", "search_read",
+        [[["description", "like", "Facebook Lead"]]],
+        {"fields": ["description"], "limit": 5000}
     )
-    return len(results) > 0
+    import re
+    ids = set()
+    for lead in leads:
+        m = re.search(r'ID:\s*(\d+)', lead.get("description") or "")
+        if m:
+            ids.add(m.group(1))
+    return ids
 
 
-def _push_lead(uid, models, fields, leadgen_id, page_name, form_name):
-    if _lead_exists(uid, models, leadgen_id):
+def _push_lead(uid, models, fields, leadgen_id, page_name, form_name, existing_ids):
+    if leadgen_id in existing_ids:
         return None
 
     name_candidates = [
@@ -205,6 +219,7 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             uid, models = _odoo_connect()
+            existing_ids = _fetch_existing_ids(uid, models)
             pages = _get_all_pages()
             results["pages"] = len(pages)
 
@@ -227,8 +242,9 @@ class handler(BaseHTTPRequestHandler):
                                 leadgen_id = lead["id"]
                                 try:
                                     fields = _extract_fields(lead.get("field_data", []))
-                                    odoo_id = _push_lead(uid, models, fields, leadgen_id, page_name, form_name)
+                                    odoo_id = _push_lead(uid, models, fields, leadgen_id, page_name, form_name, existing_ids)
                                     if odoo_id:
+                                        existing_ids.add(leadgen_id)
                                         results["synced"].append({
                                             "leadgen_id": leadgen_id,
                                             "page": page_name,
