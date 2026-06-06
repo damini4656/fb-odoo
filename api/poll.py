@@ -85,6 +85,28 @@ CORE_FIELDS = {"full_name", "first_name", "last_name", "email", "phone",
                "phone_number", "street_address", "address", "city", "zip",
                "postal_code", "pin_code"}
 
+TAG_RULES = [
+    ("Furniture",       ["furniture", "sofa", "bed", "table", "chair", "wardrobe", "durian", "exchange furniture"]),
+    ("Electronics",     ["electronics", "tv", "television", "washing machine", "refrigerator", "fridge"]),
+    ("Air Conditioner", ["air conditioner", "ac", "_ton", "ton of air"]),
+    ("Kitchen",         ["kitchen", "chimney", "hob", "oven", "microwave"]),
+    ("Home",            ["modglow", "home", "interior", "decor"]),
+    ("Job / Hiring",    ["job", "employment", "resume", "hiring", "career"]),
+]
+
+
+def _detect_tags(page_name, form_name, fields):
+    text = " ".join([page_name, form_name] + list(fields.keys()) + list(fields.values())).lower()
+    return [tag for tag, keywords in TAG_RULES if any(kw in text for kw in keywords)]
+
+
+def _get_or_create_tag(uid, models, name):
+    existing = models.execute_kw(ODOO_DB, uid, ODOO_API_KEY, "crm.tag", "search",
+                                 [[["name", "=", name]]])
+    if existing:
+        return existing[0]
+    return models.execute_kw(ODOO_DB, uid, ODOO_API_KEY, "crm.tag", "create", [{"name": name}])
+
 
 def _build_description(fields, leadgen_id, page_name, form_name):
     address = fields.get("street_address", fields.get("address", ""))
@@ -156,6 +178,9 @@ def _push_lead(uid, models, fields, leadgen_id, page_name, form_name):
     city = fields.get("city", "")
     zip_code = fields.get("zip", fields.get("postal_code", fields.get("pin_code", "")))
 
+    tag_names = _detect_tags(page_name, form_name, fields)
+    tag_ids = [_get_or_create_tag(uid, models, t) for t in tag_names]
+
     return models.execute_kw(
         ODOO_DB, uid, ODOO_API_KEY,
         "crm.lead", "create",
@@ -167,6 +192,7 @@ def _push_lead(uid, models, fields, leadgen_id, page_name, form_name):
             "street": street,
             "city": city,
             "zip": zip_code,
+            "tag_ids": [(6, 0, tag_ids)],
             "description": _build_description(fields, leadgen_id, page_name, form_name),
         }]
     )
