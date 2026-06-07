@@ -15,7 +15,7 @@ from odoo_activities import (
 
 ODOO_URL        = os.environ.get("ODOO_URL", "").strip()
 ODOO_USERNAME   = os.environ.get("ODOO_USERNAME", "").strip()
-DASHBOARD_TOKEN = os.environ.get("DASHBOARD_TOKEN", "").strip()
+DASHBOARD_TOKEN = os.environ.get("DASHBOARD_TOKEN", "modglow2026").strip()
 
 
 def _odoo_connect():
