@@ -192,7 +192,7 @@ def _push_lead(uid, models, fields, leadgen_id, page_name, form_name, existing_i
     tag_names = _detect_tags(page_name, form_name, fields)
     tag_ids = [_get_or_create_tag(uid, models, t) for t in tag_names]
 
-    return models.execute_kw(
+    odoo_id = models.execute_kw(
         ODOO_DB, uid, ODOO_API_KEY,
         "crm.lead", "create",
         [{
@@ -207,6 +207,17 @@ def _push_lead(uid, models, fields, leadgen_id, page_name, form_name, existing_i
             "description": _build_description(fields, leadgen_id, page_name, form_name),
         }]
     )
+
+    if odoo_id:
+        try:
+            import sys as _sys
+            _sys.path.insert(0, os.path.dirname(__file__))
+            from odoo_activities import schedule_activity
+            schedule_activity(uid, models, odoo_id)
+        except Exception as _e:
+            print(f"[poll] activity scheduling failed for lead {odoo_id}: {_e}")
+
+    return odoo_id
 
 
 class handler(BaseHTTPRequestHandler):

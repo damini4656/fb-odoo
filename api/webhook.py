@@ -58,6 +58,16 @@ def _push_to_odoo(fields: dict, leadgen_id: str) -> int:
             "source_id": False,
         }]
     )
+
+    if lead_id:
+        try:
+            import sys as _sys, os as _os
+            _sys.path.insert(0, _os.path.dirname(__file__))
+            from odoo_activities import schedule_activity
+            schedule_activity(uid, models, lead_id)
+        except Exception as _e:
+            print(f"[webhook] activity scheduling failed: {_e}")
+
     return lead_id
 
 

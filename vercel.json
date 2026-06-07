@@ -1,7 +1,12 @@
 {
+  "functions": {
+    "api/poll.py":      { "maxDuration": 300 },
+    "api/dashboard.py": { "maxDuration": 60 }
+  },
   "rewrites": [
-    { "source": "/webhook", "destination": "/api/webhook" },
-    { "source": "/poll", "destination": "/api/poll" },
-    { "source": "/auth", "destination": "/api/auth" }
+    { "source": "/webhook",   "destination": "/api/webhook" },
+    { "source": "/poll",      "destination": "/api/poll" },
+    { "source": "/auth",      "destination": "/api/auth" },
+    { "source": "/dashboard", "destination": "/api/dashboard" }
   ]
 }
